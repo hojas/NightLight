@@ -7,10 +7,15 @@
 
 import SwiftUI
 import Combine
+import UIKit
 
 struct ContentView: View {
     @State private var isOn = true
-    @State private var brightness: Double = 0.5
+    @State private var brightness: Double = 0.5 {
+        didSet {
+            adjustScreenBrightness(to: brightness)
+        }
+    }
     @State private var colorIndex = 0
     @State private var timerEndTime: Date?
     @State private var showingTimerPicker = false
@@ -23,6 +28,10 @@ struct ContentView: View {
     
     @StateObject private var timerManager = TimerManager()
     
+    @State private var canAdjustBrightness: Bool = false
+
+    @State private var screenBrightness: Double = 0.5
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -59,10 +68,12 @@ struct ContentView: View {
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true
             setupTimerCheck()
+            checkBrightnessPermission()
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
             timerManager.cancel()
+            resetScreenBrightness()
         }
         .sheet(isPresented: $showingTimerPicker) {
             TimerPickerView(timerEndTime: $timerEndTime)
@@ -132,15 +143,33 @@ struct ContentView: View {
             
             if isOn {
                 VStack(spacing: 25) {
+                    // 夜灯亮度控制
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("亮度")
+                        Text("夜灯亮度")
+                            .foregroundColor(.white)
+                            .font(.custom("Avenir-Medium", size: 16))
+                        HStack {
+                            Image(systemName: "lightbulb.min")
+                                .foregroundColor(.yellow)
+                            Slider(value: $brightness, in: 0.1...1)
+                                .accentColor(colors[colorIndex])
+                            Image(systemName: "lightbulb.max")
+                                .foregroundColor(.yellow)
+                        }
+                    }
+                    
+                    // 屏幕亮度控制
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("屏幕亮度")
                             .foregroundColor(.white)
                             .font(.custom("Avenir-Medium", size: 16))
                         HStack {
                             Image(systemName: "sun.min.fill")
                                 .foregroundColor(.yellow)
-                            Slider(value: $brightness, in: 0.1...1)
-                                .accentColor(colors[colorIndex])
+                            Slider(value: $screenBrightness, in: 0.1...1) { _ in
+                                adjustScreenBrightness(to: screenBrightness)
+                            }
+                            .accentColor(.white)
                             Image(systemName: "sun.max.fill")
                                 .foregroundColor(.yellow)
                         }
@@ -271,6 +300,28 @@ struct ContentView: View {
                 isOn = false
                 timerEndTime = nil
             }
+        }
+    }
+
+    // 添加这个新函数来调整屏幕亮度
+    private func adjustScreenBrightness(to value: Double) {
+        if canAdjustBrightness {
+            UIScreen.main.brightness = CGFloat(value)
+            print("屏幕亮度已调整为: \(value)")
+        } else {
+            print("无法调整屏幕亮度")
+        }
+    }
+
+    private func checkBrightnessPermission() {
+        canAdjustBrightness = UIScreen.main.brightness >= 0
+        print("是否可以调整屏幕亮度: \(canAdjustBrightness)")
+    }
+
+    private func resetScreenBrightness() {
+        if canAdjustBrightness {
+            UIScreen.main.brightness = UIScreen.main.brightness
+            print("屏幕亮度已重置")
         }
     }
 }
