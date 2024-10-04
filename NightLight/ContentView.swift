@@ -305,6 +305,8 @@ struct AnyShape: Shape {
     }
 }
 
+extension AnyShape: @unchecked Sendable {}
+
 struct Ring: Shape {
     var thickness: CGFloat // 圆环的厚度,0.0 到 1.0 之间
     
