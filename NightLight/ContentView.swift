@@ -23,7 +23,24 @@ struct ContentView: View {
     
     @State private var isControlPanelExpanded = true
     
-    let colors: [Color] = [.white, Color(hex: "FFB3BA"), Color(hex: "BAFFC9"), Color(hex: "BAE1FF"), Color(hex: "FFFFBA"), Color(hex: "FFD8B3"), Color(hex: "E0BBE4")]
+    // 修改颜色数组，选择更适合夜间使用的柔和色调
+    let colors: [Color] = [
+        .white,
+        Color(hex: "FFF0F5"),  // 淡雅粉红
+        Color(hex: "E6E6FA"),  // 淡紫色
+        Color(hex: "F0FFFF"),  // 天蓝色
+        Color(hex: "F0FFF0"),  // 蜜瓜色
+        Color(hex: "FFF5EE"),  // 海贝色
+        Color(hex: "F5F5DC"),  // 米色
+        Color(hex: "FAFAD2"),  // 浅金菊黄
+        Color(hex: "E0FFFF"),  // 淡青色
+        Color(hex: "FFE4E1"),  // 薄雾玫瑰
+        Color(hex: "F0E68C"),  // 卡其色
+        Color(hex: "D8BFD8"),  // 蓟色
+        Color(hex: "FFEFD5"),  // 蜜桃色
+        Color(hex: "F0FFFF"),  // 爱丽丝蓝
+        Color(hex: "F5F5F5")   // 白烟
+    ]
     let styles = ["圆形", "方形", "圆环"]
     
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -215,18 +232,32 @@ struct ContentView: View {
     
     private func controlButton(title: String, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 2) {  // 减小间距
-                Image(systemName: icon)
-                    .font(.system(size: 18))  // 减小图标大小
+            VStack(spacing: 2) {
+                if title == "颜色" {
+                    ZStack {
+                        Circle()
+                            .fill(colors[colorIndex])
+                            .frame(width: 24, height: 24)
+                        Circle()
+                            .stroke(Color.white, lineWidth: 2)
+                            .frame(width: 24, height: 24)
+                        Image(systemName: icon)
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                    }
+                } else {
+                    Image(systemName: icon)
+                        .font(.system(size: 18))
+                }
                 Text(title)
-                    .font(.custom("Avenir-Medium", size: 10))  // 减小字体
+                    .font(.custom("Avenir-Medium", size: 10))
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)  // 减小按钮高度
+            .frame(height: 50)
             .background(LinearGradient(gradient: Gradient(colors: gradient), startPoint: .topLeading, endPoint: .bottomTrailing))
-            .cornerRadius(12)  // 减小圆角
-            .shadow(color: gradient[0].opacity(0.4), radius: 4, x: 0, y: 2)  // 调整阴影
+            .cornerRadius(12)
+            .shadow(color: gradient[0].opacity(0.4), radius: 4, x: 0, y: 2)
         }
     }
     
