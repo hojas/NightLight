@@ -34,6 +34,13 @@ struct ContentView: View {
 
     @State private var screenBrightness: Double = 0.5
 
+    // 在 ContentView 结构体中添加这个新的常量数组
+    let buttonGradients: [[Color]] = [
+        [Color(hex: "FF512F"), Color(hex: "DD2476")],  // 红色渐变
+        [Color(hex: "11998e"), Color(hex: "38ef7d")],  // 绿色渐变
+        [Color(hex: "2193b0"), Color(hex: "6dd5ed")]   // 蓝色渐变
+    ]
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -42,10 +49,10 @@ struct ContentView: View {
                 if horizontalSizeClass == .regular {
                     // iPad 布局
                     VStack {
-                        Spacer()
+                        Spacer().frame(height: 50) // 添加一个固定高度的 Spacer，使小夜灯整体下移
                         nightLightView(size: geometry.size)
                             .frame(height: geometry.size.height * 0.5)
-                        Spacer()
+                        Spacer() // 这个 Spacer 会占据剩余空间，将控制面板推到底部
                         controlPanelView(size: geometry.size)
                             .padding(.bottom, 30)
                     }
@@ -104,7 +111,7 @@ struct ContentView: View {
     
     private func controlPanelView(size: CGSize) -> some View {
         VStack {
-            Spacer() // 添加这行来将控制面板推到底部
+            Spacer() // 这会将控制面板推到底部
             if horizontalSizeClass == .regular {
                 controlPanel
                     .frame(maxWidth: 400)
@@ -113,9 +120,9 @@ struct ContentView: View {
                     .frame(maxWidth: min(size.width - 40, 400))
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity) // 修改这行
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .padding(.horizontal, horizontalSizeClass == .regular ? 30 : 15)
-        .padding(.bottom, 20) // 添加底部内边距
+        .padding(.bottom, 10) // 将底部内边距从 30 减小到 10，使控制面板更靠近屏幕底部
     }
     
     private func calculateNightLightDimension(for size: CGSize) -> CGFloat {
@@ -132,61 +139,61 @@ struct ContentView: View {
     }
     
     private var controlPanel: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 12) {  // 减小间距
             if isControlPanelExpanded {
                 HStack {
                     Text(isOn ? "夜灯控制" : "夜灯已关闭")
                         .foregroundColor(.white)
-                        .font(.custom("Avenir-Heavy", size: 18))
+                        .font(.custom("Avenir-Heavy", size: 16))  // 减小字体
                     Spacer()
                     Toggle("", isOn: $isOn)
                         .labelsHidden()
                         .tint(colorIndex == 0 ? .gray : colors[colorIndex])
-                        .scaleEffect(1.1)
+                        .scaleEffect(1.0)  // 减小开关大小
                 }
-                .padding(.bottom, 5)
+                .padding(.bottom, 2)  // 减小底部间距
                 
                 if isOn {
-                    VStack(spacing: 18) {
+                    VStack(spacing: 12) {  // 减小间距
                         brightnessControlView(title: "夜灯亮度", value: $brightness, color: colors[colorIndex])
                         brightnessControlView(title: "屏幕亮度", value: $screenBrightness, color: .white) {
                             adjustScreenBrightness(to: screenBrightness)
                         }
                         
-                        HStack(spacing: 10) {
-                            controlButton(title: "更换颜色", icon: "wand.and.stars", gradient: [Color(hex: "8A2387"), Color(hex: "E94057"), Color(hex: "F27121")]) {
+                        HStack(spacing: 6) {  // 减小按钮间距
+                            controlButton(title: "颜色", icon: "paintpalette.fill", gradient: buttonGradients[0]) {
                                 colorIndex = (colorIndex + 1) % colors.count
                             }
                             
-                            controlButton(title: "切换样式", icon: "sparkles", gradient: [Color(hex: "11998e"), Color(hex: "38ef7d")]) {
+                            controlButton(title: "样式", icon: "square.on.circle.fill", gradient: buttonGradients[1]) {
                                 styleIndex = (styleIndex + 1) % styles.count
                             }
+                            
+                            timerButton
                         }
-                        
-                        timerButton
                     }
                 }
             } else {
                 HStack {
                     Text(isOn ? "夜灯已开启" : "夜灯已关闭")
                         .foregroundColor(.white)
-                        .font(.custom("Avenir-Medium", size: 16))
+                        .font(.custom("Avenir-Medium", size: 14))  // 减小字体
                     Spacer()
                     Toggle("", isOn: $isOn)
                         .labelsHidden()
                         .tint(colorIndex == 0 ? .gray : colors[colorIndex])
-                        .scaleEffect(1.1)
+                        .scaleEffect(1.0)  // 减小开关大小
                 }
             }
         }
-        .padding(20)
+        .padding(12)  // 减小内边距
         .background(Color(UIColor.systemGray6).opacity(0.9))
-        .cornerRadius(20)
-        .shadow(color: colors[colorIndex].opacity(0.3), radius: 10, x: 0, y: 5)
+        .cornerRadius(16)  // 减小圆角
+        .shadow(color: colors[colorIndex].opacity(0.3), radius: 8, x: 0, y: 4)  // 调整阴影
         .overlay(
             VStack {
                 expandCollapseButton
-                    .padding(.top, 8)
+                    .padding(.top, 4)  // 减小顶部间距
                 Spacer()
             }
         )
@@ -208,17 +215,18 @@ struct ContentView: View {
     
     private func controlButton(title: String, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            VStack(spacing: 2) {  // 减小间距
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.system(size: 18))  // 减小图标大小
                 Text(title)
+                    .font(.custom("Avenir-Medium", size: 10))  // 减小字体
             }
-            .font(.custom("Avenir-Medium", size: 13))
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)  // 减小垂直内边距
-            .background(LinearGradient(gradient: Gradient(colors: gradient), startPoint: .leading, endPoint: .trailing))
-            .cornerRadius(10)  // 稍微减小圆角
+            .frame(height: 50)  // 减小按钮高度
+            .background(LinearGradient(gradient: Gradient(colors: gradient), startPoint: .topLeading, endPoint: .bottomTrailing))
+            .cornerRadius(12)  // 减小圆角
+            .shadow(color: gradient[0].opacity(0.4), radius: 4, x: 0, y: 2)  // 调整阴影
         }
     }
     
@@ -230,62 +238,49 @@ struct ContentView: View {
                 showingTimerPicker = true
             }
         }) {
-            HStack {
+            VStack(spacing: 2) {  // 减小间距
                 Image(systemName: timerEndTime != nil ? "alarm.fill" : "alarm")
-                    .foregroundColor(.white)
-                    .font(.system(size: 14))
+                    .font(.system(size: 18))  // 减小图标大小
                 if let endTime = timerEndTime {
                     Text(timerText(for: endTime))
-                        .font(.custom("Avenir-Heavy", size: 13))
-                        .foregroundColor(.white)
-                    Spacer()
-                    Text("取消")
-                        .font(.custom("Avenir-Medium", size: 11))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.red.opacity(0.8))
-                        .clipShape(Capsule())
+                        .font(.custom("Avenir-Heavy", size: 10))  // 减小字体
                 } else {
-                    Text("设置定时")
-                        .foregroundColor(.white)
+                    Text("定时")
+                        .font(.custom("Avenir-Medium", size: 10))  // 减小字体
                 }
             }
-            .font(.custom("Avenir-Medium", size: 13))
+            .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)  // 减小垂直内边距
-            .padding(.horizontal, 14)  // 稍微减小水平内边距
+            .frame(height: 50)  // 减小按钮高度
             .background(
                 LinearGradient(
-                    gradient: Gradient(colors: [
-                        timerEndTime != nil ? Color(hex: "FF512F") : Color(hex: "2193b0"),
-                        timerEndTime != nil ? Color(hex: "DD2476") : Color(hex: "6dd5ed")
-                    ]),
-                    startPoint: .leading,
-                    endPoint: .trailing
+                    gradient: Gradient(colors: buttonGradients[2]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
             )
-            .cornerRadius(10)  // 稍微减小圆角
+            .cornerRadius(12)  // 减小圆角
+            .shadow(color: buttonGradients[2][0].opacity(0.4), radius: 4, x: 0, y: 2)  // 调整阴影
         }
     }
     
     private func brightnessControlView(title: String, value: Binding<Double>, color: Color, onChange: (() -> Void)? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {  // 减小间距
             Text(title)
                 .foregroundColor(.white)
-                .font(.custom("Avenir-Medium", size: 14))
-            HStack(spacing: 12) {
+                .font(.custom("Avenir-Medium", size: 12))  // 减小字体
+            HStack(spacing: 10) {  // 减小间距
                 Image(systemName: "sun.min")
                     .foregroundColor(.yellow)
-                    .font(.system(size: 14))
+                    .font(.system(size: 12))  // 减小图标大小
                 CustomSlider(value: value, color: color)
-                    .frame(height: 24)
+                    .frame(height: 20)  // 减小滑块高度
                     .onChange(of: value.wrappedValue) { _ in
                         onChange?()
                     }
                 Image(systemName: "sun.max")
                     .foregroundColor(.yellow)
-                    .font(.system(size: 14))
+                    .font(.system(size: 12))  // 减小图标大小
             }
         }
     }
