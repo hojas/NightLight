@@ -1,0 +1,45 @@
+/* 
+  Localizable.strings
+  NightLight
+
+  Created by yuanxiang on 2024/10/5.
+  
+*/
+"SwitchToEnglish" = "Switch to English";
+"SwitchToChinese" = "Switch to Chinese";
+"NightLightControl" = "Night Light Control";
+"NightLightOff" = "Night Light Off";
+"NightLightOn" = "Night Light On";
+"Color" = "Color";
+"Style" = "Style";
+"Timer" = "Timer";
+"NightLightBrightness" = "Night Light Brightness";
+"ScreenBrightness" = "Screen Brightness";
+"CustomColor" = "Custom Color";
+"SelectColor" = "Select Color";
+"UseCustomColor" = "Use Custom Color";
+"Done" = "Done";
+"White" = "White";
+"Pink" = "Pink";
+"Blue" = "Blue";
+"Green" = "Green";
+"Yellow" = "Yellow";
+"Orange" = "Orange";
+"Purple" = "Purple";
+"Custom" = "Custom";
+"Circle" = "Circle";
+"Square" = "Square";
+"Ring" = "Ring";
+"TimeUp" = "Time's Up";
+"SetTimer" = "Set Timer";
+"SelectDuration" = "Select Duration";
+"SelectTime" = "Select Time";
+"Cancel" = "Cancel";
+"Set" = "Set";
+"30Minutes" = "30 Minutes";
+"1Hour" = "1 Hour";
+"2Hours" = "2 Hours";
+"4Hours" = "4 Hours";
+"TimerMode" = "Timer Mode";
+"Duration" = "Duration";
+"SpecificTime" = "Specific Time";

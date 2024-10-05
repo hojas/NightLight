@@ -26,9 +26,15 @@ struct ContentView: View {
     @State private var customColor: Color = .white
     @State private var canAdjustBrightness: Bool = false
     @State private var screenBrightness: Double = 0.5
+    @State private var language: Language = .chinese
+    
+    enum Language: String {
+        case chinese = "zh"
+        case english = "en"
+    }
 
     // MARK: - 常量
-    let styles = ["圆形", "方形", "圆环"]
+    let styles = ["Circle", "Square", "Ring"]
     let buttonGradients: [[Color]] = [
         [Color(hex: "FF512F"), Color(hex: "DD2476")],  // 红色渐变
         [Color(hex: "11998e"), Color(hex: "38ef7d")],  // 绿色渐变
@@ -79,6 +85,8 @@ struct ContentView: View {
         .sheet(isPresented: $showingColorPicker) {
             ColorPickerView(selectedColor: $colorIndex, colors: $colors)
         }
+        .environment(\.locale, Locale(identifier: language.rawValue))
+        .id(language) // 添加这一行
     }
 
     // MARK: - 辅助方法
@@ -167,7 +175,7 @@ struct ContentView: View {
         VStack(spacing: 12) {  // 减小间距
             if isControlPanelExpanded {
                 HStack {
-                    Text(isOn ? "夜灯控制" : "夜灯已关闭")
+                    Text(LocalizedStringKey(isOn ? "NightLightControl" : "NightLightOff"))
                         .foregroundColor(.white)
                         .font(.custom("Avenir-Heavy", size: 16))  // 减小字体
                     Spacer()
@@ -180,27 +188,38 @@ struct ContentView: View {
                 
                 if isOn {
                     VStack(spacing: 12) {  // 减小间距
-                        brightnessControlView(title: "夜灯亮度", value: $brightness, color: colors[safeColorIndex(colorIndex)])
-                        brightnessControlView(title: "屏幕亮度", value: $screenBrightness, color: .white) {
+                        brightnessControlView(title: "NightLightBrightness", value: $brightness, color: colors[safeColorIndex(colorIndex)])
+                        brightnessControlView(title: "ScreenBrightness", value: $screenBrightness, color: .white) {
                             adjustScreenBrightness(to: screenBrightness)
                         }
                         
                         HStack(spacing: 6) {  // 减小按钮间距
-                            controlButton(title: "颜色", icon: "paintpalette.fill", gradient: buttonGradients[0]) {
+                            controlButton(title: LocalizedStringKey("Color"), icon: "paintpalette.fill", gradient: buttonGradients[0]) {
                                 showingColorPicker = true
                             }
                             
-                            controlButton(title: "样式", icon: "square.on.circle.fill", gradient: buttonGradients[1]) {
+                            controlButton(title: LocalizedStringKey("Style"), icon: "square.on.circle.fill", gradient: buttonGradients[1]) {
                                 styleIndex = (styleIndex + 1) % styles.count
                             }
                             
                             timerButton
                         }
+                        
+                        // 修改语言切换按钮
+                        Button(action: {
+                            language = language == .chinese ? .english : .chinese
+                        }) {
+                            Text(LocalizedStringKey(language == .chinese ? "SwitchToEnglish" : "SwitchToChinese"))
+                                .foregroundColor(.white)
+                                .padding(8)
+                                .background(Color.blue)
+                                .cornerRadius(8)
+                        }
                     }
                 }
             } else {
                 HStack {
-                    Text(isOn ? "夜灯已开启" : "夜灯已关闭")
+                    Text(LocalizedStringKey(isOn ? "NightLightOn" : "NightLightOff"))
                         .foregroundColor(.white)
                         .font(.custom("Avenir-Medium", size: 14))  // 减小字体
                     Spacer()
@@ -238,10 +257,10 @@ struct ContentView: View {
         }
     }
     
-    private func controlButton(title: String, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
+    private func controlButton(title: LocalizedStringKey, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 2) {
-                if title == "颜色" {
+                if title == "Color" {
                     ZStack {
                         Circle()
                             .fill(colors[safeColorIndex(colorIndex)])
@@ -287,7 +306,7 @@ struct ContentView: View {
                     Text(timerText(for: endTime))
                         .font(.custom("Avenir-Heavy", size: 10))  // 减小字体
                 } else {
-                    Text("定时")
+                    Text(LocalizedStringKey("Timer"))
                         .font(.custom("Avenir-Medium", size: 10))  // 减小字体
                 }
             }
@@ -307,22 +326,22 @@ struct ContentView: View {
     }
     
     private func brightnessControlView(title: String, value: Binding<Double>, color: Color, onChange: (() -> Void)? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 6) {  // 减小间距
-            Text(title)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(LocalizedStringKey(title))
                 .foregroundColor(.white)
-                .font(.custom("Avenir-Medium", size: 12))  // 减小字体
-            HStack(spacing: 10) {  // 减小间距
+                .font(.custom("Avenir-Medium", size: 12))
+            HStack(spacing: 10) {
                 Image(systemName: "sun.min")
                     .foregroundColor(.yellow)
-                    .font(.system(size: 12))  // 减小图标大小
+                    .font(.system(size: 12))
                 CustomSlider(value: value, color: color)
-                    .frame(height: 20)  // 减小滑块高度
+                    .frame(height: 20)
                     .onChange(of: value.wrappedValue) { _ in
                         onChange?()
                     }
                 Image(systemName: "sun.max")
                     .foregroundColor(.yellow)
-                    .font(.system(size: 12))  // 减小图标大小
+                    .font(.system(size: 12))
             }
         }
     }
@@ -367,11 +386,11 @@ struct ContentView: View {
     // 修改 nightLightShape 计算属性
     var nightLightShape: some Shape {
         switch styles[styleIndex] {
-        case "形":
+        case "Circle":
             return AnyShape(Circle())
-        case "方形":
+        case "Square":
             return AnyShape(RoundedRectangle(cornerRadius: 25))
-        case "圆环":
+        case "Ring":
             return AnyShape(Ring(thickness: 0.3))
         default:
             return AnyShape(Circle())
@@ -435,7 +454,7 @@ struct ContentView: View {
                 return String(format: "%d钟", minutes)
             }
         } else {
-            return "时间到"
+            return "TimeUp"
         }
     }
 }
@@ -504,29 +523,29 @@ struct TimerPickerView: View {
     var body: some View {
         NavigationView {
             Form {
-                Picker("定时模式", selection: $selectedMode) {
-                    Text("持续时间").tag(TimerMode.duration)
-                    Text("具体时间").tag(TimerMode.time)
+                Picker(LocalizedStringKey("TimerMode"), selection: $selectedMode) {
+                    Text(LocalizedStringKey("Duration")).tag(TimerMode.duration)
+                    Text(LocalizedStringKey("SpecificTime")).tag(TimerMode.time)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 
                 if selectedMode == .duration {
-                    Picker("选择时长", selection: $selectedDuration) {
-                        Text("30分钟").tag(TimeInterval(30 * 60))
-                        Text("1小时").tag(TimeInterval(60 * 60))
-                        Text("2小时").tag(TimeInterval(2 * 60 * 60))
-                        Text("4小时").tag(TimeInterval(4 * 60 * 60))
+                    Picker(LocalizedStringKey("SelectDuration"), selection: $selectedDuration) {
+                        Text(LocalizedStringKey("30Minutes")).tag(TimeInterval(30 * 60))
+                        Text(LocalizedStringKey("1Hour")).tag(TimeInterval(60 * 60))
+                        Text(LocalizedStringKey("2Hours")).tag(TimeInterval(2 * 60 * 60))
+                        Text(LocalizedStringKey("4Hours")).tag(TimeInterval(4 * 60 * 60))
                     }
                 } else {
-                    DatePicker("选择时间", selection: $selectedTime, displayedComponents: .hourAndMinute)
+                    DatePicker(LocalizedStringKey("SelectTime"), selection: $selectedTime, displayedComponents: .hourAndMinute)
                 }
             }
-            .navigationBarTitle("设置定时", displayMode: .inline)
+            .navigationBarTitle(LocalizedStringKey("SetTimer"), displayMode: .inline)
             .navigationBarItems(
-                leading: Button("取消") {
+                leading: Button(LocalizedStringKey("Cancel")) {
                     presentationMode.wrappedValue.dismiss()
                 },
-                trailing: Button("设置") {
+                trailing: Button(LocalizedStringKey("Set")) {
                     setTimer()
                     presentationMode.wrappedValue.dismiss()
                 }
@@ -601,14 +620,14 @@ struct ColorPickerView: View {
             VStack(spacing: 20) {
                 // 自定义颜色选择器
                 VStack(alignment: .leading) {
-                    Text("自定义颜色")
+                    Text("CustomColor")
                         .font(.headline)
-                    ColorPicker("选择颜色", selection: $customColor)
+                    ColorPicker("SelectColor", selection: $customColor)
                         .labelsHidden()
                     Button(action: {
                         useCustomColor()
                     }) {
-                        Text("使用自定义颜色")
+                        Text("UseCustomColor")
                             .foregroundColor(.white)
                             .padding()
                             .background(customColor)
@@ -634,11 +653,11 @@ struct ColorPickerView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("选择颜色")
+            .navigationTitle("SelectColor")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button("Done") {
                         presentationMode.wrappedValue.dismiss()
                     }
                 }
@@ -680,8 +699,8 @@ struct ColorCircle: View {
         }
     }
     
-    private func colorName(for index: Int) -> String {
-        let names = ["白", "粉", "蓝", "绿", "黄", "橙", "紫", "自定义"]
+    private func colorName(for index: Int) -> LocalizedStringKey {
+        let names: [LocalizedStringKey] = ["White", "Pink", "Blue", "Green", "Yellow", "Orange", "Purple", "Custom"]
         return names[index]
     }
 }

@@ -29,9 +29,22 @@
 		DBE6CD412CAF8DA00036227A /* NightLightUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NightLightUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DB2AD3012CB148C700204DC8 /* Exceptions for "NightLight" folder in "NightLight" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DBE6CD262CAF8D9F0036227A /* NightLight */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DBE6CD292CAF8D9F0036227A /* NightLight */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DB2AD3012CB148C700204DC8 /* Exceptions for "NightLight" folder in "NightLight" target */,
+			);
 			path = NightLight;
 			sourceTree = "<group>";
 		};
@@ -192,6 +205,7 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = DBE6CD1E2CAF8D9F0036227A;
 			minimizedProjectReferenceProxies = 1;
@@ -399,7 +413,9 @@
 				DEVELOPMENT_TEAM = GY9MAHBJB2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NightLight/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "小夜灯";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -430,7 +446,9 @@
 				DEVELOPMENT_TEAM = GY9MAHBJB2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NightLight/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "小夜灯";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
