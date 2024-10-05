@@ -104,14 +104,14 @@ struct ContentView: View {
         VStack {
             if horizontalSizeClass == .regular {
                 controlPanel
-                    .frame(maxWidth: 500)
+                    .frame(maxWidth: 400) // 从 500 减小到 400
             } else {
                 controlPanel
-                    .frame(maxWidth: min(size.width - 40, 500))
+                    .frame(maxWidth: min(size.width - 40, 400)) // 从 500 减小到 400
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, horizontalSizeClass == .regular ? 40 : 20)
+        .padding(.horizontal, horizontalSizeClass == .regular ? 30 : 15) // 减小水平内边距
     }
     
     private func calculateNightLightDimension(for size: CGSize) -> CGFloat {
@@ -128,54 +128,30 @@ struct ContentView: View {
     }
     
     private var controlPanel: some View {
-        VStack(spacing: 25) {
+        VStack(spacing: 20) { // 从 25 减小到 20
             HStack {
                 Text(isOn ? "开灯" : "关灯")
                     .foregroundColor(.white)
-                    .font(.custom("Avenir-Heavy", size: 20))
+                    .font(.custom("Avenir-Heavy", size: 18)) // 从 20 减小到 18
                 Spacer()
                 Toggle("", isOn: $isOn)
                     .labelsHidden()
                     .tint(colorIndex == 0 ? .gray : colors[colorIndex])
-                    .scaleEffect(1.2)
+                    .scaleEffect(1.1) // 从 1.2 减小到 1.1
             }
-            .padding(.bottom, 10)
+            .padding(.bottom, 5) // 从 10 减小到 5
             
             if isOn {
-                VStack(spacing: 25) {
+                VStack(spacing: 20) { // 从 25 减小到 20
                     // 夜灯亮度控制
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("夜灯亮度")
-                            .foregroundColor(.white)
-                            .font(.custom("Avenir-Medium", size: 16))
-                        HStack {
-                            Image(systemName: "lightbulb.min")
-                                .foregroundColor(.yellow)
-                            Slider(value: $brightness, in: 0.1...1)
-                                .accentColor(colors[colorIndex])
-                            Image(systemName: "lightbulb.max")
-                                .foregroundColor(.yellow)
-                        }
-                    }
+                    brightnessControlView(title: "夜灯亮度", value: $brightness, color: colors[colorIndex])
                     
                     // 屏幕亮度控制
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("屏幕亮度")
-                            .foregroundColor(.white)
-                            .font(.custom("Avenir-Medium", size: 16))
-                        HStack {
-                            Image(systemName: "sun.min.fill")
-                                .foregroundColor(.yellow)
-                            Slider(value: $screenBrightness, in: 0.1...1) { _ in
-                                adjustScreenBrightness(to: screenBrightness)
-                            }
-                            .accentColor(.white)
-                            Image(systemName: "sun.max.fill")
-                                .foregroundColor(.yellow)
-                        }
+                    brightnessControlView(title: "屏幕亮度", value: $screenBrightness, color: .white) {
+                        adjustScreenBrightness(to: screenBrightness)
                     }
                     
-                    HStack(spacing: 15) {
+                    HStack(spacing: 10) { // 从 15 减小到 10
                         Button(action: {
                             colorIndex = (colorIndex + 1) % colors.count
                         }) {
@@ -258,10 +234,10 @@ struct ContentView: View {
                 .transition(.opacity)
             }
         }
-        .padding(25)
+        .padding(20) // 从 25 减小到 20
         .background(Color(UIColor.systemGray6).opacity(0.9))
-        .cornerRadius(30)
-        .shadow(color: colors[colorIndex].opacity(0.3), radius: 15, x: 0, y: 5)
+        .cornerRadius(25) // 从 30 减小到 25
+        .shadow(color: colors[colorIndex].opacity(0.3), radius: 10, x: 0, y: 5) // 从 radius: 15 减小到 10
     }
     
     // 修改 nightLightShape 计算属性
@@ -322,6 +298,40 @@ struct ContentView: View {
         if canAdjustBrightness {
             UIScreen.main.brightness = UIScreen.main.brightness
             print("屏幕亮度已重置")
+        }
+    }
+
+    // 添加这个新的函数来创建亮度控制视图
+    private func brightnessControlView(title: String, value: Binding<Double>, color: Color, onChange: (() -> Void)? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 8) { // 从 10 减小到 8
+            Text(title)
+                .foregroundColor(.white)
+                .font(.custom("Avenir-Medium", size: 14)) // 从 16 减小到 14
+            HStack {
+                Image(systemName: "sun.min")
+                    .foregroundColor(.yellow)
+                    .font(.system(size: 12)) // 添加字体大小
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: 6) // 从 8 减小到 6
+                    Capsule()
+                        .fill(color)
+                        .frame(width: CGFloat(value.wrappedValue) * UIScreen.main.bounds.width * 0.6, height: 6) // 从 0.7 减小到 0.6，高度从 8 减小到 6
+                }
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { gesture in
+                            let width = UIScreen.main.bounds.width * 0.6 // 从 0.7 减小到 0.6
+                            let newValue = min(max(gesture.location.x / width, 0), 1)
+                            value.wrappedValue = Double(newValue)
+                            onChange?()
+                        }
+                )
+                Image(systemName: "sun.max")
+                    .foregroundColor(.yellow)
+                    .font(.system(size: 12)) // 添加字体大小
+            }
         }
     }
 }
