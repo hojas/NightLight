@@ -10,6 +10,7 @@ import Combine
 import UIKit
 
 struct ContentView: View {
+    // MARK: - 状态变量
     @State private var isOn = true
     @State private var brightness: Double = 0.5 {
         didSet {
@@ -19,11 +20,28 @@ struct ContentView: View {
     @State private var colorIndex = 0
     @State private var timerEndTime: Date?
     @State private var showingTimerPicker = false
-    @State private var styleIndex = 0 // 新增: 用于跟踪当前样式
-    
+    @State private var styleIndex = 0 // 用于跟踪当前夜灯样式
     @State private var isControlPanelExpanded = true
+    @State private var showingColorPicker = false
+    @State private var customColor: Color = .white
+    @State private var canAdjustBrightness: Bool = false
+    @State private var screenBrightness: Double = 0.5
+
+    // MARK: - 常量
+    let styles = ["圆形", "方形", "圆环"]
+    let buttonGradients: [[Color]] = [
+        [Color(hex: "FF512F"), Color(hex: "DD2476")],  // 红色渐变
+        [Color(hex: "11998e"), Color(hex: "38ef7d")],  // 绿色渐变
+        [Color(hex: "2193b0"), Color(hex: "6dd5ed")]   // 蓝色渐变
+    ]
+
+    // MARK: - 环境变量
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
-    // 修改颜色数组，添加一个固定的自定义颜色位置
+    // MARK: - 状态对象
+    @StateObject private var timerManager = TimerManager()
+
+    // MARK: - 颜色数组
     @State private var colors: [Color] = [
         .white,
         Color(hex: "FFD1DC"),  // 浅粉红
@@ -32,31 +50,10 @@ struct ContentView: View {
         Color(hex: "FAFAD2"),  // 浅黄色
         Color(hex: "FFE4B5"),  // 淡橙色
         Color(hex: "E6E6FA"),  // 淡紫色
-        .gray  // 这将是自定义颜色的位置
-    ]
-    let styles = ["圆形", "方形", "圆环"]
-    
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    
-    @StateObject private var timerManager = TimerManager()
-    
-    @State private var canAdjustBrightness: Bool = false
-
-    @State private var screenBrightness: Double = 0.5
-
-    // 在 ContentView 结构体中添加这个新的常量数组
-    let buttonGradients: [[Color]] = [
-        [Color(hex: "FF512F"), Color(hex: "DD2476")],  // 红色渐变
-        [Color(hex: "11998e"), Color(hex: "38ef7d")],  // 绿色渐变
-        [Color(hex: "2193b0"), Color(hex: "6dd5ed")]   // 蓝色渐变
+        .gray  // 自定义颜色位置
     ]
 
-    // 在 ContentView 结构体中添加这个新的状态变量
-    @State private var showingColorPicker = false
-
-    // 在 ContentView 结构体中添加这个新的状态变量
-    @State private var customColor: Color = .white
-
+    // MARK: - 主体视图
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -64,42 +61,18 @@ struct ContentView: View {
                 
                 if horizontalSizeClass == .regular {
                     // iPad 布局
-                    VStack {
-                        Spacer().frame(height: 50) // 添加一个固定高度的 Spacer，使小夜灯整体移
-                        nightLightView(size: geometry.size)
-                            .frame(height: geometry.size.height * 0.5)
-                        Spacer() // 这个 Spacer 会占据剩空间，将控制面板推到底部
-                        controlPanelView(size: geometry.size)
-                            .padding(.bottom, 30)
-                    }
+                    iPadLayout(geometry: geometry)
                 } else {
                     // iPhone 布局
-                    ScrollView {
-                        VStack(spacing: 30) {
-                            Spacer(minLength: 20)
-                            nightLightView(size: geometry.size)
-                                .frame(height: geometry.size.height * 0.5)
-                            controlPanelView(size: geometry.size)
-                            Spacer(minLength: 20)
-                        }
-                        .frame(minHeight: geometry.size.height)
-                    }
+                    iPhoneLayout(geometry: geometry)
                 }
             }
             .frame(width: geometry.size.width)
         }
         .preferredColorScheme(.dark)
         .animation(.easeInOut, value: isOn)
-        .onAppear {
-            UIApplication.shared.isIdleTimerDisabled = true
-            setupTimerCheck()
-            checkBrightnessPermission()
-        }
-        .onDisappear {
-            UIApplication.shared.isIdleTimerDisabled = false
-            timerManager.cancel()
-            resetScreenBrightness()
-        }
+        .onAppear(perform: setupOnAppear)
+        .onDisappear(perform: cleanupOnDisappear)
         .sheet(isPresented: $showingTimerPicker) {
             TimerPickerView(timerEndTime: $timerEndTime)
         }
@@ -107,12 +80,38 @@ struct ContentView: View {
             ColorPickerView(selectedColor: $colorIndex, colors: $colors)
         }
     }
-    
-    // 在 ContentView 结构体中添加这个方法
+
+    // MARK: - 辅助方法
     private func safeColorIndex(_ index: Int) -> Int {
         return min(max(index, 0), colors.count - 1)
     }
     
+    // MARK: - 布局方法
+    private func iPadLayout(geometry: GeometryProxy) -> some View {
+        VStack {
+            Spacer().frame(height: 50)
+            nightLightView(size: geometry.size)
+                .frame(height: geometry.size.height * 0.5)
+            Spacer()
+            controlPanelView(size: geometry.size)
+                .padding(.bottom, 30)
+        }
+    }
+    
+    private func iPhoneLayout(geometry: GeometryProxy) -> some View {
+        ScrollView {
+            VStack(spacing: 30) {
+                Spacer(minLength: 20)
+                nightLightView(size: geometry.size)
+                    .frame(height: geometry.size.height * 0.5)
+                controlPanelView(size: geometry.size)
+                Spacer(minLength: 20)
+            }
+            .frame(minHeight: geometry.size.height)
+        }
+    }
+
+    // MARK: - 夜灯视图
     private func nightLightView(size: CGSize) -> some View {
         let dimension = calculateNightLightDimension(for: size)
         let currentColor = colors[safeColorIndex(colorIndex)]
@@ -133,7 +132,8 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.5), value: colorIndex)
         .animation(.easeInOut(duration: 0.5), value: styleIndex)
     }
-    
+
+    // MARK: - 控制面板视图
     private func controlPanelView(size: CGSize) -> some View {
         VStack {
             Spacer() // 这会将控制面板推到底部
@@ -378,32 +378,20 @@ struct ContentView: View {
         }
     }
     
-    func timerText(for endTime: Date) -> String {
-        let remaining = endTime.timeIntervalSince(Date())
-        if remaining > 0 {
-            let hours = Int(remaining) / 3600
-            let minutes = (Int(remaining) % 3600) / 60
-            
-            if hours > 0 {
-                return String(format: "%d:%02d", hours, minutes)
-            } else {
-                return String(format: "%d钟", minutes)
-            }
-        } else {
-            return "时间到"
-        }
-    }
-    
-    private func setupTimerCheck() {
-        timerManager.start {
-            if let endTime = timerEndTime, endTime <= Date() {
-                isOn = false
-                timerEndTime = nil
-            }
-        }
+    // MARK: - 生命周期方法
+    private func setupOnAppear() {
+        UIApplication.shared.isIdleTimerDisabled = true
+        setupTimerCheck()
+        checkBrightnessPermission()
     }
 
-    // 添加这个新函数来调整屏幕亮度
+    private func cleanupOnDisappear() {
+        UIApplication.shared.isIdleTimerDisabled = false
+        timerManager.cancel()
+        resetScreenBrightness()
+    }
+
+    // MARK: - 亮度调节方法
     private func adjustScreenBrightness(to value: Double) {
         if canAdjustBrightness {
             UIScreen.main.brightness = CGFloat(value)
@@ -422,6 +410,32 @@ struct ContentView: View {
         if canAdjustBrightness {
             UIScreen.main.brightness = UIScreen.main.brightness
             print("屏幕亮度已重置")
+        }
+    }
+
+    // MARK: - 定时器相关方法
+    private func setupTimerCheck() {
+        timerManager.start {
+            if let endTime = timerEndTime, endTime <= Date() {
+                isOn = false
+                timerEndTime = nil
+            }
+        }
+    }
+
+    func timerText(for endTime: Date) -> String {
+        let remaining = endTime.timeIntervalSince(Date())
+        if remaining > 0 {
+            let hours = Int(remaining) / 3600
+            let minutes = (Int(remaining) % 3600) / 60
+            
+            if hours > 0 {
+                return String(format: "%d:%02d", hours, minutes)
+            } else {
+                return String(format: "%d钟", minutes)
+            }
+        } else {
+            return "时间到"
         }
     }
 }
