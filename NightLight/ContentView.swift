@@ -9,6 +9,40 @@ import SwiftUI
 import Combine
 import UIKit
 
+struct CustomSlider: View {
+    @Binding var value: Double
+    var color: Color
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(height: 8)
+                
+                Capsule()
+                    .fill(color)
+                    .frame(width: max(0, min(geometry.size.width * CGFloat(value), geometry.size.width)), height: 8)
+                
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 24, height: 24)
+                    .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    .position(x: max(12, min(geometry.size.width * CGFloat(value), geometry.size.width - 12)),
+                              y: geometry.size.height / 2)
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { gesture in
+                                let newValue = (gesture.location.x - 12) / (geometry.size.width - 24)
+                                self.value = min(max(Double(newValue), 0), 1)
+                            }
+                    )
+            }
+        }
+        .frame(height: 24)
+    }
+}
+
 struct ContentView: View {
     // MARK: - 状态变量
     @State private var isOn = true
@@ -27,6 +61,7 @@ struct ContentView: View {
     @State private var canAdjustBrightness: Bool = false
     @State private var screenBrightness: Double = 0.5
     @State private var language: Language = .chinese
+    @State private var showingControlPanel = false
     
     enum Language: String {
         case chinese = "zh"
@@ -86,7 +121,7 @@ struct ContentView: View {
             ColorPickerView(selectedColor: $colorIndex, colors: $colors)
         }
         .environment(\.locale, Locale(identifier: language.rawValue))
-        .id(language) // 添加这一行
+        .id(language)
     }
 
     // MARK: - 辅助方法
@@ -144,7 +179,7 @@ struct ContentView: View {
     // MARK: - 控制面板视图
     private func controlPanelView(size: CGSize) -> some View {
         VStack {
-            Spacer() // 这会将控制面板推到底部
+            Spacer()
             if horizontalSizeClass == .regular {
                 controlPanel
                     .frame(maxWidth: 400)
@@ -155,7 +190,7 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .padding(.horizontal, horizontalSizeClass == .regular ? 30 : 15)
-        .padding(.bottom, 10) // 将底部内边距从 30 减小到 10，使控制面板更靠近屏幕底部
+        .padding(.bottom, 10)
     }
     
     private func calculateNightLightDimension(for size: CGSize) -> CGFloat {
@@ -172,28 +207,28 @@ struct ContentView: View {
     }
     
     private var controlPanel: some View {
-        VStack(spacing: 12) {  // 减小间距
+        VStack(spacing: 12) {  // 减小整体间距
             if isControlPanelExpanded {
                 HStack {
                     Text(LocalizedStringKey(isOn ? "NightLightControl" : "NightLightOff"))
                         .foregroundColor(.white)
-                        .font(.custom("Avenir-Heavy", size: 16))  // 减小字体
+                        .font(.subheadline)  // 减小字体
                     Spacer()
                     Toggle("", isOn: $isOn)
                         .labelsHidden()
                         .tint(colorIndex == 0 ? .gray : colors[safeColorIndex(colorIndex)])
-                        .scaleEffect(1.0)  // 减小开关大小
+                        .scaleEffect(0.8)  // 缩小开关
                 }
-                .padding(.bottom, 2)  // 减小底部间距
+                .padding(.bottom, 4)
                 
                 if isOn {
-                    VStack(spacing: 12) {  // 减小间距
+                    VStack(spacing: 12) {  // 减小控件之间的间距
                         brightnessControlView(title: "NightLightBrightness", value: $brightness, color: colors[safeColorIndex(colorIndex)])
                         brightnessControlView(title: "ScreenBrightness", value: $screenBrightness, color: .white) {
                             adjustScreenBrightness(to: screenBrightness)
                         }
                         
-                        HStack(spacing: 6) {  // 减小按钮间距
+                        HStack(spacing: 8) {  // 四个按钮放在一排
                             controlButton(title: LocalizedStringKey("Color"), icon: "paintpalette.fill", gradient: buttonGradients[0]) {
                                 showingColorPicker = true
                             }
@@ -203,41 +238,35 @@ struct ContentView: View {
                             }
                             
                             timerButton
+                            
+                            controlButton(title: LocalizedStringKey(language == .chinese ? "EN" : "中"), icon: "globe", gradient: buttonGradients[2]) {
+                                language = language == .chinese ? .english : .chinese
+                            }
                         }
-                        
-                        // 修改语言切换按钮
-                        Button(action: {
-                            language = language == .chinese ? .english : .chinese
-                        }) {
-                            Text(LocalizedStringKey(language == .chinese ? "SwitchToEnglish" : "SwitchToChinese"))
-                                .foregroundColor(.white)
-                                .padding(8)
-                                .background(Color.blue)
-                                .cornerRadius(8)
-                        }
+                        .frame(height: 50)  // 设置按钮高度
                     }
                 }
             } else {
                 HStack {
                     Text(LocalizedStringKey(isOn ? "NightLightOn" : "NightLightOff"))
                         .foregroundColor(.white)
-                        .font(.custom("Avenir-Medium", size: 14))  // 减小字体
+                        .font(.footnote)  // 减小字体
                     Spacer()
                     Toggle("", isOn: $isOn)
                         .labelsHidden()
                         .tint(colorIndex == 0 ? .gray : colors[safeColorIndex(colorIndex)])
-                        .scaleEffect(1.0)  // 减小开关大小
+                        .scaleEffect(0.8)  // 缩小开关
                 }
             }
         }
-        .padding(12)  // 减小内边距
+        .padding(16)  // 减小内边距
         .background(Color(UIColor.systemGray6).opacity(0.9))
-        .cornerRadius(16)  // 减小圆角
-        .shadow(color: colors[safeColorIndex(colorIndex)].opacity(0.3), radius: 8, x: 0, y: 4)  // 调整阴影
+        .cornerRadius(16)
+        .shadow(color: colors[safeColorIndex(colorIndex)].opacity(0.3), radius: 8, x: 0, y: 4)
         .overlay(
             VStack {
                 expandCollapseButton
-                    .padding(.top, 4)  // 减小顶部距
+                    .padding(.top, 4)
                 Spacer()
             }
         )
@@ -260,34 +289,16 @@ struct ContentView: View {
     private func controlButton(title: LocalizedStringKey, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 2) {
-                if title == "Color" {
-                    ZStack {
-                        Circle()
-                            .fill(colors[safeColorIndex(colorIndex)])
-                            .frame(width: 24, height: 24)
-                        Circle()
-                            .stroke(Color.white, lineWidth: 2)
-                            .frame(width: 24, height: 24)
-                        Image(systemName: icon)
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                    }
-                    .onTapGesture {
-                        showingColorPicker = true
-                    }
-                } else {
-                    Image(systemName: icon)
-                        .font(.system(size: 18))
-                }
+                Image(systemName: icon)
+                    .font(.system(size: 16))  // 减小图标大小
                 Text(title)
-                    .font(.custom("Avenir-Medium", size: 10))
+                    .font(.system(size: 10))  // 使用更小的字体
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(height: 50)  // 保持按钮高度
             .background(LinearGradient(gradient: Gradient(colors: gradient), startPoint: .topLeading, endPoint: .bottomTrailing))
             .cornerRadius(12)
-            .shadow(color: gradient[0].opacity(0.4), radius: 4, x: 0, y: 2)
         }
     }
     
@@ -299,20 +310,20 @@ struct ContentView: View {
                 showingTimerPicker = true
             }
         }) {
-            VStack(spacing: 2) {  // 减小间距
+            VStack(spacing: 2) {
                 Image(systemName: timerEndTime != nil ? "alarm.fill" : "alarm")
-                    .font(.system(size: 18))  // 减小图标大小
+                    .font(.system(size: 16))  // 减小图标大小
                 if let endTime = timerEndTime {
                     Text(timerText(for: endTime))
-                        .font(.custom("Avenir-Heavy", size: 10))  // 减小字体
+                        .font(.system(size: 10))  // 使用更小的字体
                 } else {
                     Text(LocalizedStringKey("Timer"))
-                        .font(.custom("Avenir-Medium", size: 10))  // 减小字体
+                        .font(.system(size: 10))  // 使用更小的字体
                 }
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)  // 减小按钮高度
+            .frame(height: 50)  // 保持按钮高度
             .background(
                 LinearGradient(
                     gradient: Gradient(colors: buttonGradients[2]),
@@ -320,66 +331,28 @@ struct ContentView: View {
                     endPoint: .bottomTrailing
                 )
             )
-            .cornerRadius(12)  // 减小圆角
-            .shadow(color: buttonGradients[2][0].opacity(0.4), radius: 4, x: 0, y: 2)  // 调整阴影
+            .cornerRadius(12)
         }
     }
     
     private func brightnessControlView(title: String, value: Binding<Double>, color: Color, onChange: (() -> Void)? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {  // 减小间距
             Text(LocalizedStringKey(title))
                 .foregroundColor(.white)
-                .font(.custom("Avenir-Medium", size: 12))
-            HStack(spacing: 10) {
+                .font(.caption)  // 减小字体
+            HStack(spacing: 8) {  // 减小间距
                 Image(systemName: "sun.min")
                     .foregroundColor(.yellow)
-                    .font(.system(size: 12))
+                    .font(.system(size: 12))  // 减小图标大小
                 CustomSlider(value: value, color: color)
-                    .frame(height: 20)
+                    .frame(height: 24)  // 减小滑块高度
                     .onChange(of: value.wrappedValue) { _ in
                         onChange?()
                     }
                 Image(systemName: "sun.max")
                     .foregroundColor(.yellow)
-                    .font(.system(size: 12))
+                    .font(.system(size: 12))  // 减小图标大小
             }
-        }
-    }
-    
-    struct CustomSlider: View {
-        @Binding var value: Double
-        var color: Color
-        
-        var body: some View {
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // 背景轨道
-                    Capsule()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(height: 8)
-                    
-                    // 填充轨道
-                    Capsule()
-                        .fill(color)
-                        .frame(width: max(0, min(geometry.size.width * CGFloat(value), geometry.size.width)), height: 8)
-                    
-                    // 滑块圆点
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 24, height: 24)
-                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-                        .position(x: max(12, min(geometry.size.width * CGFloat(value), geometry.size.width - 12)),
-                                  y: geometry.size.height / 2)
-                        .gesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { gesture in
-                                    let newValue = (gesture.location.x - 12) / (geometry.size.width - 24)
-                                    self.value = min(max(Double(newValue), 0), 1)
-                                }
-                        )
-                }
-            }
-            .frame(height: 24)
         }
     }
     
