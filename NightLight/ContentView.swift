@@ -10,7 +10,7 @@ import Combine
 import UIKit
 
 struct ContentView: View {
-    // MARK: - 状态变量
+    // 状态变量
     @State private var isOn = true
     @State private var brightness: Double = 0.5
     @State private var colorIndex = 0
@@ -24,14 +24,14 @@ struct ContentView: View {
     @State private var language: Language = .chinese
     @State private var showingControlPanel = false
     
-    // MARK: - 环境变量
+    // 环境变量
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
-    // MARK: - 状态对象
+    // 状态对象
     @StateObject private var timerManager = TimerManager()
     @StateObject private var brightnessManager = BrightnessManager()
 
-    // MARK: - 常量
+    // 常量
     let styles = ["Circle", "Square", "Ring"]
     let buttonGradients: [[Color]] = [
         [Color(hex: "FF512F"), Color(hex: "DD2476")],
@@ -49,7 +49,7 @@ struct ContentView: View {
         .gray
     ]
 
-    // MARK: - 主体视图
+    // 主体视图
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -77,7 +77,7 @@ struct ContentView: View {
         .id(language)
     }
 
-    // MARK: - 布局方法
+    // iPad布局
     private func iPadLayout(geometry: GeometryProxy) -> some View {
         VStack {
             Spacer().frame(height: 50)
@@ -89,6 +89,7 @@ struct ContentView: View {
         }
     }
     
+    // iPhone布局
     private func iPhoneLayout(geometry: GeometryProxy) -> some View {
         ScrollView {
             VStack(spacing: 30) {
@@ -102,16 +103,18 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - 夜灯视图
+    // 夜灯视图
     private func nightLightView(size: CGSize) -> some View {
         let dimension = calculateNightLightDimension(for: size)
         let currentColor = colors[colorIndex]
         return ZStack {
+            // 背景光晕
             nightLightShape
                 .fill(isOn ? currentColor.opacity(0.3) : Color.gray.opacity(0.1))
                 .frame(width: dimension * 1.2, height: dimension * 1.2)
                 .blur(radius: 40)
             
+            // 主要夜灯形状
             nightLightShape
                 .fill(isOn ? currentColor.opacity(brightness) : Color.gray.opacity(0.3))
                 .frame(width: dimension, height: dimension)
@@ -124,7 +127,7 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.5), value: styleIndex)
     }
 
-    // MARK: - 控制面板视图
+    // 控制面板视图
     private func controlPanelView(size: CGSize) -> some View {
         VStack {
             Spacer()
@@ -141,6 +144,7 @@ struct ContentView: View {
         .padding(.bottom, 10)
     }
     
+    // 控制面板内容
     private var controlPanel: some View {
         VStack(spacing: 12) {
             if isControlPanelExpanded {
@@ -156,6 +160,7 @@ struct ContentView: View {
         .overlay(expandCollapseButton, alignment: .top)
     }
     
+    // 展开的控制面板
     private var expandedControlPanel: some View {
         VStack(spacing: 12) {
             toggleView
@@ -171,10 +176,12 @@ struct ContentView: View {
         }
     }
     
+    // 折叠的控制面板
     private var collapsedControlPanel: some View {
         toggleView
     }
     
+    // 开关视图
     private var toggleView: some View {
         HStack {
             Text(LocalizedStringKey(isOn ? "NightLightControl" : "NightLightOff"))
@@ -188,6 +195,7 @@ struct ContentView: View {
         }
     }
     
+    // 控制按钮行
     private var controlButtonsRow: some View {
         HStack(spacing: 8) {
             controlButton(title: LocalizedStringKey("Color"), icon: "paintpalette.fill", gradient: buttonGradients[0]) {
@@ -204,6 +212,7 @@ struct ContentView: View {
         .frame(height: 50)
     }
     
+    // 展开/折叠按钮
     private var expandCollapseButton: some View {
         Button(action: {
             withAnimation(.easeInOut(duration: 0.3)) {
@@ -219,7 +228,7 @@ struct ContentView: View {
         .padding(.top, 4)
     }
     
-    // MARK: - 辅助方法
+    // 计算夜灯尺寸
     private func calculateNightLightDimension(for size: CGSize) -> CGFloat {
         let minDimension = min(size.width, size.height)
         let isLandscape = size.width > size.height
@@ -228,6 +237,7 @@ struct ContentView: View {
             : minDimension * 0.8
     }
     
+    // 夜灯形状
     private var nightLightShape: some Shape {
         switch styles[styleIndex] {
         case "Circle": return AnyShape(Circle())
@@ -237,7 +247,7 @@ struct ContentView: View {
         }
     }
     
-    // MARK: - 生命周期方法
+    // 设置初始状态
     private func setupOnAppear() {
         UIApplication.shared.isIdleTimerDisabled = true
         timerManager.start {
@@ -249,12 +259,14 @@ struct ContentView: View {
         brightnessManager.checkPermission()
     }
 
+    // 清理资源
     private func cleanupOnDisappear() {
         UIApplication.shared.isIdleTimerDisabled = false
         timerManager.cancel()
         brightnessManager.resetScreenBrightness()
     }
 
+    // 亮度控制视图
     private func brightnessControlView(title: String, value: Binding<Double>, color: Color, onChange: (() -> Void)? = nil) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(LocalizedStringKey(title))
@@ -276,6 +288,7 @@ struct ContentView: View {
         }
     }
 
+    // 控制按钮
     private func controlButton(title: LocalizedStringKey, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 2) {
@@ -292,6 +305,7 @@ struct ContentView: View {
         }
     }
 
+    // 定时器按钮
     private var timerButton: some View {
         Button(action: {
             if timerEndTime != nil {
@@ -325,6 +339,7 @@ struct ContentView: View {
         }
     }
 
+    // 格式化定时器文本
     private func timerText(for endTime: Date) -> String {
         let remaining = endTime.timeIntervalSince(Date())
         if remaining > 0 {
@@ -342,7 +357,8 @@ struct ContentView: View {
     }
 }
 
-// MARK: - 辅助类型
+// 以下是辅助类型和视图，可以根据需要添加注释
+
 enum Language: String {
     case chinese = "zh"
     case english = "en"
@@ -380,7 +396,6 @@ class BrightnessManager: ObservableObject {
     }
 }
 
-// MARK: - 自定义视图和形状
 struct CustomSlider: View {
     @Binding var value: Double
     var color: Color
@@ -430,7 +445,6 @@ struct Ring: Shape {
     }
 }
 
-// MARK: - 扩展
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
