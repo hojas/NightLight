@@ -23,23 +23,16 @@ struct ContentView: View {
     
     @State private var isControlPanelExpanded = true
     
-    // 修改颜色数组，选择更适合夜间使用的柔和色调
-    let colors: [Color] = [
+    // 修改颜色数组，添加一个固定的自定义颜色位置
+    @State private var colors: [Color] = [
         .white,
-        Color(hex: "FFF0F5"),  // 淡雅粉红
+        Color(hex: "FFD1DC"),  // 浅粉红
+        Color(hex: "ADD8E6"),  // 浅蓝色
+        Color(hex: "98FB98"),  // 浅绿色
+        Color(hex: "FAFAD2"),  // 浅黄色
+        Color(hex: "FFE4B5"),  // 淡橙色
         Color(hex: "E6E6FA"),  // 淡紫色
-        Color(hex: "F0FFFF"),  // 天蓝色
-        Color(hex: "F0FFF0"),  // 蜜瓜色
-        Color(hex: "FFF5EE"),  // 海贝色
-        Color(hex: "F5F5DC"),  // 米色
-        Color(hex: "FAFAD2"),  // 浅金菊黄
-        Color(hex: "E0FFFF"),  // 淡青色
-        Color(hex: "FFE4E1"),  // 薄雾玫瑰
-        Color(hex: "F0E68C"),  // 卡其色
-        Color(hex: "D8BFD8"),  // 蓟色
-        Color(hex: "FFEFD5"),  // 蜜桃色
-        Color(hex: "F0FFFF"),  // 爱丽丝蓝
-        Color(hex: "F5F5F5")   // 白烟
+        .gray  // 这将是自定义颜色的位置
     ]
     let styles = ["圆形", "方形", "圆环"]
     
@@ -58,6 +51,12 @@ struct ContentView: View {
         [Color(hex: "2193b0"), Color(hex: "6dd5ed")]   // 蓝色渐变
     ]
 
+    // 在 ContentView 结构体中添加这个新的状态变量
+    @State private var showingColorPicker = false
+
+    // 在 ContentView 结构体中添加这个新的状态变量
+    @State private var customColor: Color = .white
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -66,10 +65,10 @@ struct ContentView: View {
                 if horizontalSizeClass == .regular {
                     // iPad 布局
                     VStack {
-                        Spacer().frame(height: 50) // 添加一个固定高度的 Spacer，使小夜灯整体下移
+                        Spacer().frame(height: 50) // 添加一个固定高度的 Spacer，使小夜灯整体移
                         nightLightView(size: geometry.size)
                             .frame(height: geometry.size.height * 0.5)
-                        Spacer() // 这个 Spacer 会占据剩余空间，将控制面板推到底部
+                        Spacer() // 这个 Spacer 会占据剩空间，将控制面板推到底部
                         controlPanelView(size: geometry.size)
                             .padding(.bottom, 30)
                     }
@@ -104,20 +103,29 @@ struct ContentView: View {
         .sheet(isPresented: $showingTimerPicker) {
             TimerPickerView(timerEndTime: $timerEndTime)
         }
+        .sheet(isPresented: $showingColorPicker) {
+            ColorPickerView(selectedColor: $colorIndex, colors: $colors)
+        }
+    }
+    
+    // 在 ContentView 结构体中添加这个方法
+    private func safeColorIndex(_ index: Int) -> Int {
+        return min(max(index, 0), colors.count - 1)
     }
     
     private func nightLightView(size: CGSize) -> some View {
         let dimension = calculateNightLightDimension(for: size)
+        let currentColor = colors[safeColorIndex(colorIndex)]
         return ZStack {
             nightLightShape
-                .fill(isOn ? colors[colorIndex].opacity(0.3) : Color.gray.opacity(0.1))
+                .fill(isOn ? currentColor.opacity(0.3) : Color.gray.opacity(0.1))
                 .frame(width: dimension * 1.2, height: dimension * 1.2)
                 .blur(radius: 40)
             
             nightLightShape
-                .fill(isOn ? colors[colorIndex].opacity(brightness) : Color.gray.opacity(0.3))
+                .fill(isOn ? currentColor.opacity(brightness) : Color.gray.opacity(0.3))
                 .frame(width: dimension, height: dimension)
-                .shadow(color: isOn ? colors[colorIndex] : .clear, radius: 40)
+                .shadow(color: isOn ? currentColor : .clear, radius: 40)
         }
         .frame(maxWidth: .infinity)
         .animation(.easeInOut(duration: 0.5), value: isOn)
@@ -165,21 +173,21 @@ struct ContentView: View {
                     Spacer()
                     Toggle("", isOn: $isOn)
                         .labelsHidden()
-                        .tint(colorIndex == 0 ? .gray : colors[colorIndex])
+                        .tint(colorIndex == 0 ? .gray : colors[safeColorIndex(colorIndex)])
                         .scaleEffect(1.0)  // 减小开关大小
                 }
                 .padding(.bottom, 2)  // 减小底部间距
                 
                 if isOn {
                     VStack(spacing: 12) {  // 减小间距
-                        brightnessControlView(title: "夜灯亮度", value: $brightness, color: colors[colorIndex])
+                        brightnessControlView(title: "夜灯亮度", value: $brightness, color: colors[safeColorIndex(colorIndex)])
                         brightnessControlView(title: "屏幕亮度", value: $screenBrightness, color: .white) {
                             adjustScreenBrightness(to: screenBrightness)
                         }
                         
                         HStack(spacing: 6) {  // 减小按钮间距
                             controlButton(title: "颜色", icon: "paintpalette.fill", gradient: buttonGradients[0]) {
-                                colorIndex = (colorIndex + 1) % colors.count
+                                showingColorPicker = true
                             }
                             
                             controlButton(title: "样式", icon: "square.on.circle.fill", gradient: buttonGradients[1]) {
@@ -198,7 +206,7 @@ struct ContentView: View {
                     Spacer()
                     Toggle("", isOn: $isOn)
                         .labelsHidden()
-                        .tint(colorIndex == 0 ? .gray : colors[colorIndex])
+                        .tint(colorIndex == 0 ? .gray : colors[safeColorIndex(colorIndex)])
                         .scaleEffect(1.0)  // 减小开关大小
                 }
             }
@@ -206,11 +214,11 @@ struct ContentView: View {
         .padding(12)  // 减小内边距
         .background(Color(UIColor.systemGray6).opacity(0.9))
         .cornerRadius(16)  // 减小圆角
-        .shadow(color: colors[colorIndex].opacity(0.3), radius: 8, x: 0, y: 4)  // 调整阴影
+        .shadow(color: colors[safeColorIndex(colorIndex)].opacity(0.3), radius: 8, x: 0, y: 4)  // 调整阴影
         .overlay(
             VStack {
                 expandCollapseButton
-                    .padding(.top, 4)  // 减小顶部间距
+                    .padding(.top, 4)  // 减小顶部距
                 Spacer()
             }
         )
@@ -236,7 +244,7 @@ struct ContentView: View {
                 if title == "颜色" {
                     ZStack {
                         Circle()
-                            .fill(colors[colorIndex])
+                            .fill(colors[safeColorIndex(colorIndex)])
                             .frame(width: 24, height: 24)
                         Circle()
                             .stroke(Color.white, lineWidth: 2)
@@ -244,6 +252,9 @@ struct ContentView: View {
                         Image(systemName: icon)
                             .font(.system(size: 14))
                             .foregroundColor(.gray)
+                    }
+                    .onTapGesture {
+                        showingColorPicker = true
                     }
                 } else {
                     Image(systemName: icon)
@@ -376,7 +387,7 @@ struct ContentView: View {
             if hours > 0 {
                 return String(format: "%d:%02d", hours, minutes)
             } else {
-                return String(format: "%d分钟", minutes)
+                return String(format: "%d钟", minutes)
             }
         } else {
             return "时间到"
@@ -557,6 +568,107 @@ extension Color {
             blue:  Double(b) / 255,
             opacity: Double(a) / 255
         )
+    }
+}
+
+// 修改 ColorPickerView 结构体
+struct ColorPickerView: View {
+    @Binding var selectedColor: Int
+    @Binding var colors: [Color]
+    @State private var customColor: Color = .gray
+    @Environment(\.presentationMode) var presentationMode
+    
+    let columns = [
+        GridItem(.adaptive(minimum: 60, maximum: 60))
+    ]
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                // 自定义颜色选择器
+                VStack(alignment: .leading) {
+                    Text("自定义颜色")
+                        .font(.headline)
+                    ColorPicker("选择颜色", selection: $customColor)
+                        .labelsHidden()
+                    Button(action: {
+                        useCustomColor()
+                    }) {
+                        Text("使用自定义颜色")
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(customColor)
+                            .cornerRadius(10)
+                    }
+                }
+                .padding()
+                .background(Color.secondary.opacity(0.1))
+                .cornerRadius(15)
+                
+                // 预设颜色网格
+                LazyVGrid(columns: columns, spacing: 15) {
+                    ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
+                        ColorCircle(color: color, isSelected: selectedColor == index, index: index)
+                            .onTapGesture {
+                                selectedColor = index
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                    }
+                }
+                .padding()
+                
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("选择颜色")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("完成") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
+        }
+        .onAppear {
+            customColor = colors.last ?? .gray
+        }
+    }
+    
+    private func useCustomColor() {
+        DispatchQueue.main.async {
+            colors[colors.count - 1] = customColor
+            selectedColor = colors.count - 1
+            presentationMode.wrappedValue.dismiss()
+        }
+    }
+}
+
+// 修改 ColorCircle 结构体
+struct ColorCircle: View {
+    let color: Color
+    let isSelected: Bool
+    let index: Int
+    
+    var body: some View {
+        VStack {
+            Circle()
+                .fill(color)
+                .frame(width: 50, height: 50)
+                .overlay(
+                    Circle()
+                        .stroke(Color.white, lineWidth: 2)
+                        .opacity(isSelected ? 1 : 0)
+                )
+            Text(colorName(for: index))
+                .font(.system(size: 10))
+                .foregroundColor(.white)
+        }
+    }
+    
+    private func colorName(for index: Int) -> String {
+        let names = ["白", "粉", "蓝", "绿", "黄", "橙", "紫", "自定义"]
+        return names[index]
     }
 }
 
